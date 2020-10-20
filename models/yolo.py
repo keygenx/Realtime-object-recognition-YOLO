@@ -19,7 +19,7 @@ from tensorflow.keras.regularizers import l2
 from tensorflow import convert_to_tensor
 
 from IPython.display import display
-from ipywidgets import IntProgress, FloatProgress
+from ipywidgets import IntProgress, FloatProgress, widgets
 
 class YOLOv3():
     def __init__(self):
@@ -41,19 +41,24 @@ class YOLOv3():
         self.prediction_threshold = 0.6
         self.max_boxes = 100 
         self.iou_threshold = 0.3
+
+        self.input_buffer_size = 5
+        self.output_buffer_size = 30
           
     def run_threaded(self, source = 'webcam', buffer_viz = False):
-        self.input_buffer_size = 30
-        self.output_buffer_size = 30
         self.run_flag = True
         self.in_que = queue.Queue(maxsize=self.input_buffer_size)
         self.out_que = queue.Queue(maxsize=self.output_buffer_size)
         self.in_progress = IntProgress(min=0, max=self.input_buffer_size)
         self.out_progress = IntProgress(min=0, max=self.output_buffer_size)
-        self.del_t = FloatProgress(min=0, max=0.05)
-        self.ren_t = FloatProgress(min=0, max=0.033)
+        
+        self.infer_t = 0
+        self.render_t = 0
+        self.infer_time = widgets.Text()
+        self.render_time = widgets.Text()
 
         if source == 'webcam': source = 0
+
         thread1 = threading.Thread(target=self._read, args = (source, ))
         thread2 = threading.Thread(target=self._infer)
         thread3 = threading.Thread(target=self._view)
@@ -61,14 +66,16 @@ class YOLOv3():
         thread1.start()
         thread2.start()
         thread3.start()
-        print('Input Buffer')
-        display(self.in_progress)
-        print('Output Buffer')
-        display(self.out_progress)
-        print('Decode Time')
-        display(self.del_t)
-        print('Render Time')
-        display(self.ren_t)
+
+        if (buffer_viz):
+            print('Input Buffer')
+            display(self.in_progress)
+            print('Output Buffer')
+            display(self.out_progress)
+            print('Decode Time (s)')
+            display(self.infer_time)
+            print('Render Time (s)')
+            display(self.render_time)
         
     def stop(self):
         self.run_flag = False
@@ -83,9 +90,10 @@ class YOLOv3():
             return
 
         self.image_h, self.image_w = img.shape[:2]
-        print(img.shape[:2])
+
         self.output_rescale = np.array([self.image_h/self.model_image_h, self.image_w/self.model_image_w, 
                                         self.image_h/self.model_image_h, self.image_w/self.model_image_w])
+
         while(ret and self.run_flag):
             img_resize = cv2.resize(img, (self.model_image_w, self.model_image_h))
             
@@ -117,8 +125,8 @@ class YOLOv3():
             self.out_que.put((img, output[:,:-1].numpy().astype('int64'), output[:,-1].numpy()))
             self.out_progress.value+=1
 
-            self.del_t.value = self.del_t.value*0.9 + (time.time() - t1)*0.1
-
+            self.infer_t = self.infer_t*0.9 + (time.time() - t1)*0.1
+            self.infer_time.value = "{:.3f}".format(self.infer_t)
         
         print('Inference Ended')
         self.run_flag=False
@@ -141,8 +149,8 @@ class YOLOv3():
             
             if cv2.waitKey(1) == ord('e'): break
             
-            self.ren_t.value = 0.9*self.ren_t.value + 0.1*(time.time() - t1)
-            
+            self.render_t = 0.9*self.render_t + 0.1*(time.time() - t1)
+            self.render_time.value = "{:.3f}".format(self.render_t)
         cv2.destroyAllWindows()
         self.run_flag=False
         print('View Ended')

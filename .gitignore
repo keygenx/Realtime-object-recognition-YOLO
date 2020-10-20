@@ -1,6 +1,6 @@
 .vs/
 .ipynb_checkpoints/
-*.mp4
+*.weights
 .git/
 .vs/
 *.h5
