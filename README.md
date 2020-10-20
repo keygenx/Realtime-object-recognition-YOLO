@@ -1,4 +1,4 @@
-# Realtime-video-recognition-YOLO (Work in progress).
+# Realtime-object-recognition-YOLO (Work in progress).
 
 This is a multi-threaded implementation of realtime object recognition based on YOLOv3.
 
