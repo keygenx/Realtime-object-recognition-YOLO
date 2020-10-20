@@ -21,6 +21,10 @@ from tensorflow import convert_to_tensor
 from IPython.display import display
 from ipywidgets import IntProgress, FloatProgress, widgets
 
+class YOLOv4():
+    pass
+
+
 class YOLOv3():
     def __init__(self):
         self.labels = np.array(["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck",
@@ -70,7 +74,7 @@ class YOLOv3():
         thread1 = threading.Thread(target=self._read, args = (source, ))
         thread2 = threading.Thread(target=self._infer)
         thread3 = threading.Thread(target=self._view)
-        #display(progress)
+
         thread1.start()
         thread2.start()
         thread3.start()
