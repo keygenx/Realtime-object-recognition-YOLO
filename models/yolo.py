@@ -54,8 +54,16 @@ class YOLOv3():
         
         self.infer_t = 0
         self.render_t = 0
-        self.infer_time = widgets.Text()
-        self.render_time = widgets.Text()
+        
+
+        if (buffer_viz):
+            print('Input Buffer')
+            display(self.in_progress)
+            print('Output Buffer')
+            display(self.out_progress)
+            self.display_infer_t = display("Inference Time (s): ", display_id = True)
+            self.display_render_t = display("Render Time (s): ", display_id = True)
+
 
         if source == 'webcam': source = 0
 
@@ -67,15 +75,7 @@ class YOLOv3():
         thread2.start()
         thread3.start()
 
-        if (buffer_viz):
-            print('Input Buffer')
-            display(self.in_progress)
-            print('Output Buffer')
-            display(self.out_progress)
-            print('Decode Time (s)')
-            display(self.infer_time)
-            print('Render Time (s)')
-            display(self.render_time)
+        
         
     def stop(self):
         self.run_flag = False
@@ -126,7 +126,7 @@ class YOLOv3():
             self.out_progress.value+=1
 
             self.infer_t = self.infer_t*0.9 + (time.time() - t1)*0.1
-            self.infer_time.value = "{:.3f}".format(self.infer_t)
+            self.display_infer_t.update("Inference Time (s): {:.3f}".format(self.infer_t))
         
         print('Inference Ended')
         self.run_flag=False
@@ -144,13 +144,13 @@ class YOLOv3():
             for i,scr in zip(output,score):
                 rect = (i[0:4]*self.output_rescale).astype('int64')
                 img = cv2.rectangle(img, tuple(rect[1::-1]), tuple(rect[3:1:-1]), (0, 0, 200), 2)
-                img = cv2.putText(img, self.labels[i[4]] + ': ' + '{:.3f}'.format(scr), (i[1], i[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36, 255, 12), 1)
+                img = cv2.putText(img, self.labels[i[4]] + ': ' + '{:.3f}'.format(scr), (rect[1], rect[0]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (36, 255, 12), 1)
             cv2.imshow(f'Video. Press \'e\' to exit.', img)
             
             if cv2.waitKey(1) == ord('e'): break
             
             self.render_t = 0.9*self.render_t + 0.1*(time.time() - t1)
-            self.render_time.value = "{:.3f}".format(self.render_t)
+            self.display_render_t.update("Render Time (s): {:.3f}".format(self.render_t))
         cv2.destroyAllWindows()
         self.run_flag=False
         print('View Ended')
